@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>リンク機構シミュレータ（8バーリンク）</title>
+  <style>
+    :root { --bg:#0b0c10; --panel:#141823; --ink:#e8eef7; --muted:#aab6c5; --grid:#243044; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; background:var(--bg); color:var(--ink); }
+    .wrap { display:grid; grid-template-columns: 360px 1fr; gap:12px; padding:12px; }
+    .panel { background:var(--panel); border:1px solid #1f2840; border-radius:12px; padding:12px; }
+    h1 { font-size:16px; margin:0 0 8px 0; }
+    .hint { color:var(--muted); font-size:12px; line-height:1.5; margin:6px 0 10px; }
+    .row { display:grid; grid-template-columns: 1fr 110px; gap:8px; align-items:center; margin:8px 0; }
+    .row label { font-size:13px; }
+    input[type="number"] { width:100%; padding:6px 8px; border-radius:8px; border:1px solid #2a3653; background:#0f1422; color:var(--ink); }
+    input[type="range"] { width:100%; }
+    .slider { display:grid; grid-template-columns: 1fr 60px; gap:8px; align-items:center; margin-top:4px; }
+    .small { font-size:12px; color:var(--muted); }
+    canvas { width:100%; height:calc(100vh - 24px); background:#070810; border:1px solid #1f2840; border-radius:12px; }
+    .stat { font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; white-space:pre-wrap; }
+    button { cursor:pointer; border:1px solid #2a3653; background:#0f1422; color:var(--ink); padding:8px 10px; border-radius:10px; font-size:13px; }
+    .btnrow { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns: 1fr; }
+      canvas { height: 58vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <h1>リンク機構シミュレータ（8バーリンク）</h1>
+      <div class="hint">
+        固定：A=(0,a), D=(d,0)。B=A+AB[cosθ,sinθ]。<br>
+        楔：B→C→D→H→B を「Bが反射角（>180°）」になる枝で自動選択。<br>
+        軌跡（F）をリンク機構に重ね描きします。背景グリッドは固定です😊
+      </div>
+
+      <div class="row"><label>a</label><input id="a_num" type="number" value="0"></div>
+      <div class="slider"><input id="a_rng" type="range"><span id="a_show" class="small"></span></div>
+
+      <div class="row"><label>d</label><input id="d_num" type="number" value="40"></div>
+      <div class="slider"><input id="d_rng" type="range"><span id="d_show" class="small"></span></div>
+
+      <hr style="border:0;border-top:1px solid #1f2840;margin:12px 0;" />
+
+      <div class="row"><label>AB</label><input id="AB_num" type="number" value="20"></div>
+      <div class="slider"><input id="AB_rng" type="range"><span id="AB_show" class="small"></span></div>
+
+      <div class="row"><label>BC</label><input id="BC_num" type="number" value="57"></div>
+      <div class="slider"><input id="BC_rng" type="range"><span id="BC_show" class="small"></span></div>
+
+      <div class="row"><label>CD</label><input id="CD_num" type="number" value="72"></div>
+      <div class="slider"><input id="CD_rng" type="range"><span id="CD_show" class="small"></span></div>
+
+      <div class="row"><label>BH</label><input id="BH_num" type="number" value="36"></div>
+      <div class="slider"><input id="BH_rng" type="range"><span id="BH_show" class="small"></span></div>
+
+      <div class="row"><label>DH</label><input id="DH_num" type="number" value="54"></div>
+      <div class="slider"><input id="DH_rng" type="range"><span id="DH_show" class="small"></span></div>
+
+      <div class="row"><label>CE（初期103）</label><input id="CE_num" type="number" value="103"></div>
+      <div class="slider"><input id="CE_rng" type="range"><span id="CE_show" class="small"></span></div>
+
+      <div class="row"><label>EG</label><input id="EG_num" type="number" value="61"></div>
+      <div class="slider"><input id="EG_rng" type="range"><span id="EG_show" class="small"></span></div>
+
+      <div class="row"><label>GH</label><input id="GH_num" type="number" value="22"></div>
+      <div class="slider"><input id="GH_rng" type="range"><span id="GH_show" class="small"></span></div>
+
+      <div class="row"><label>FH</label><input id="FH_num" type="number" value="67"></div>
+      <div class="slider"><input id="FH_rng" type="range"><span id="FH_show" class="small"></span></div>
+
+      <hr style="border:0;border-top:1px solid #1f2840;margin:12px 0;" />
+
+      <div class="row"><label>θ（表示）</label><input id="theta_num" type="number" value="0"></div>
+      <div class="slider"><input id="theta_rng" type="range"><span id="theta_show" class="small"></span></div>
+
+      <div class="btnrow">
+        <button id="btn_play">▶ 再生</button>
+        <button id="btn_reset">⟲ リセット再計算</button>
+        <button id="btn_recalc">軌跡を再計算</button>
+        <button id="btn_preset">初期値に戻す</button>
+      </div>
+
+      <div class="stat" id="stat">ログ:</div>
+    </div>
+
+    <canvas id="canvas_main"></canvas>
+  </div>
+
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  const stat = document.getElementById("stat");
+  const log = (s) => { stat.textContent = "ログ:\n" + s; };
+
+  try {
+    // ---------- helpers ----------
+    const TAU = Math.PI * 2;
+    const deg2rad = d => d * Math.PI / 180;
+    const clampInt = (v, lo, hi) => {
+      const n = Number(v);
+      const x = Number.isFinite(n) ? Math.round(n) : lo;
+      return Math.max(lo, Math.min(hi, x));
+    };
+    const dist = (p,q) => Math.hypot(p.x-q.x, p.y-q.y);
+    const add  = (p,q) => ({x:p.x+q.x, y:p.y+q.y});
+    const sub  = (p,q) => ({x:p.x-q.x, y:p.y-q.y});
+    const mul  = (p,s) => ({x:p.x*s, y:p.y*s});
+    const norm = v => {
+      const L = Math.hypot(v.x, v.y);
+      return L > 1e-9 ? {x:v.x/L, y:v.y/L} : {x:0,y:0};
+    };
+
+    function circleCircle(c0, r0, c1, r1) {
+      const dx = c1.x - c0.x, dy = c1.y - c0.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 1e-9) return [];
+      if (d > r0 + r1 + 1e-9) return [];
+      if (d < Math.abs(r0 - r1) - 1e-9) return [];
+      const a = (r0*r0 - r1*r1 + d*d) / (2*d);
+      const h2 = r0*r0 - a*a;
+      const h = h2 <= 1e-9 ? 0 : Math.sqrt(h2);
+      const xm = c0.x + a * (dx/d);
+      const ym = c0.y + a * (dy/d);
+      const rx = -(dy/d) * h;
+      const ry =  (dx/d) * h;
+      const p1 = {x: xm + rx, y: ym + ry};
+      const p2 = {x: xm - rx, y: ym - ry};
+      return (h === 0) ? [p1] : [p1, p2];
+    }
+
+    // ---------- concavity-at-B selection ----------
+    function cross(a,b,c){
+      return (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+    }
+    function polygonArea2(B,C,D,H){
+      return B.x*C.y - B.y*C.x
+           + C.x*D.y - C.y*D.x
+           + D.x*H.y - D.y*H.x
+           + H.x*B.y - H.y*B.x;
+    }
+    function isReflexAtB(B,C,D,H){
+      const orient = Math.sign(polygonArea2(B,C,D,H)) || 1; // +1 CCW, -1 CW
+      const local = cross(B, C, H); // cross((C-B),(H-B))
+      return Math.sign(local) !== orient;
+    }
+    function segIntersect(p1,p2,q1,q2){
+      const o = (a,b,c)=>Math.sign(cross(a,b,c));
+      const onSeg=(a,b,c)=>Math.min(a.x,b.x)-1e-9<=c.x&&c.x<=Math.max(a.x,b.x)+1e-9
+                   &&Math.min(a.y,b.y)-1e-9<=c.y&&c.y<=Math.max(a.y,b.y)+1e-9;
+      const o1=o(p1,p2,q1), o2=o(p1,p2,q2), o3=o(q1,q2,p1), o4=o(q1,q2,p2);
+      if (o1===0 && onSeg(p1,p2,q1)) return true;
+      if (o2===0 && onSeg(p1,p2,q2)) return true;
+      if (o3===0 && onSeg(q1,q2,p1)) return true;
+      if (o4===0 && onSeg(q1,q2,p2)) return true;
+      return (o1!==o2 && o3!==o4);
+    }
+    function chooseCH(B, D, Ccands, Hcands, prevCH){
+      if (!Ccands?.length || !Hcands?.length) return null;
+
+      let best = null;
+      let bestScore = Infinity;
+      let fallback = null;
+      let fallbackScore = Infinity;
+
+      for (const C of Ccands){
+        for (const H of Hcands){
+          // 自己交差回避（BCとDH、CDとHB）
+          if (segIntersect(B,C, D,H)) continue;
+          if (segIntersect(C,D, H,B)) continue;
+
+          const reflexB = isReflexAtB(B,C,D,H);
+
+          // スコア：前フレームに近いほど優先（なければ上側を少し優先）
+          let score = 0;
+          if (prevCH){
+            score += dist(C, prevCH.C) + dist(H, prevCH.H);
+          } else {
+            score += -0.01*(C.y + H.y);
+          }
+
+          if (reflexB) {
+            if (score < bestScore) { bestScore = score; best = {C,H}; }
+          } else {
+            if (score < fallbackScore) { fallbackScore = score; fallback = {C,H}; }
+          }
+        }
+      }
+      return best || fallback;
+    }
+
+    // ---------- UI map ----------
+    const cfg = [
+      ["a",0,200],["d",1,300],
+      ["AB",1,300],["BC",1,500],["CD",1,500],["BH",1,500],["DH",1,500],
+      ["CE",1,600],["EG",1,800],["GH",1,800],["FH",1,900],
+      ["theta",0,360],
+    ];
+
+    // ---------- default preset ----------
+    function applyDefaultPreset(){
+      const v = {
+        a:5, d:40,
+        AB:20, BC:57, CD:72,
+        BH:36, DH:54,
+        CE:103, EG:55, GH:22, FH:85,
+        theta:0
+      };
+      for (const k in v) {
+        document.getElementById(k+"_num").value = v[k];
+      }
+      for (const [k, lo, hi] of cfg) setRangeAndSync(k, lo, hi);
+    }
+
+    const el = {};
+    for (const [k] of cfg) {
+      el[k+"_num"] = document.getElementById(k+"_num");
+      el[k+"_rng"] = document.getElementById(k+"_rng");
+      el[k+"_show"] = document.getElementById(k+"_show");
+      if (!el[k+"_num"] || !el[k+"_rng"] || !el[k+"_show"]) {
+        throw new Error("要素IDが見つかりません: " + k);
+      }
+    }
+
+    function setRangeAndSync(k, lo, hi) {
+      el[k+"_rng"].min = lo; el[k+"_rng"].max = hi; el[k+"_rng"].step = 1;
+      el[k+"_num"].min = lo; el[k+"_num"].max = hi; el[k+"_num"].step = 1;
+      const v = clampInt(el[k+"_num"].value, lo, hi);
+      el[k+"_num"].value = v;
+      el[k+"_rng"].value = v;
+      el[k+"_show"].textContent = String(v);
+      el[k+"_num"].setAttribute("value", String(v));
+    }
+
+    function getInt(k) {
+      const v = parseInt(el[k+"_num"].value, 10);
+      return Number.isFinite(v) ? v : 0;
+    }
+
+    for (const [k, lo, hi] of cfg) setRangeAndSync(k, lo, hi);
+
+    function setTheta(v){
+      const x = ((Math.round(v) % 361) + 361) % 361; // 0..360
+      el["theta_num"].value = x;
+      el["theta_rng"].value = x;
+      el["theta_show"].textContent = String(x);
+      el["theta_num"].setAttribute("value", String(x));
+    }
+
+    function syncPair(k, lo, hi) {
+      const num = el[k+"_num"], rng = el[k+"_rng"], show = el[k+"_show"];
+      const apply = (v) => {
+        const x = clampInt(v, lo, hi);
+        num.value = x;
+        rng.value = x;
+        show.textContent = String(x);
+        num.setAttribute("value", String(x));
+      };
+      apply(num.value);
+
+      rng.addEventListener("input", () => {
+        apply(rng.value);
+        if (k==="theta") drawAll();
+      });
+      num.addEventListener("input", () => {
+        apply(num.value);
+        if (k==="theta") drawAll();
+      });
+    }
+    for (const [k, lo, hi] of cfg) syncPair(k, lo, hi);
+
+    // ---------- canvas ----------
+    const canvas = document.getElementById("canvas_main");
+    const ctx = canvas.getContext("2d");
+
+    function fitCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      canvas.width  = Math.max(1, Math.round(rect.width  * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      return {W:rect.width, H:rect.height};
+    }
+
+    // 背景固定グリッド（origin無視）
+    function grid(ctx,W,H){
+      ctx.clearRect(0,0,W,H);
+      ctx.save();
+      ctx.lineWidth=1;
+      ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
+      const step=20;
+      for (let x=0; x<=W; x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for (let y=0; y<=H; y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+      ctx.restore();
+    }
+
+    function w2s(p, origin, s){return {x: origin.x + (-p.x)*s, y: origin.y - p.y*s};}
+    function seg(ctx, p,q, origin, s){
+      const a = w2s(p,origin,s), b = w2s(q,origin,s);
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+    function pt(ctx, p, origin, s, name, r=4){
+      const q = w2s(p,origin,s);
+      ctx.beginPath(); ctx.arc(q.x,q.y,r,0,TAU); ctx.fill();
+      if (name) ctx.fillText(name, q.x+6, q.y-6);
+    }
+
+    // ---------- solve ----------
+    function solveFrame(thetaDeg, prev) {
+      const a = getInt("a"), d = getInt("d");
+      const AB = getInt("AB"), BC = getInt("BC"), CD = getInt("CD"), BH = getInt("BH"), DH = getInt("DH");
+      const CE = getInt("CE"), EG = getInt("EG"), GH = getInt("GH"), FH = getInt("FH");
+
+      const DE = CE - CD;
+      if (DE <= 0) return { ok:false, reason:"CE <= CD（DがCE上に置けない）" };
+      if (FH <= GH) return { ok:false, reason:"FH <= GH（GがFH上に置けない）" };
+
+      const A = {x:0, y:a};
+      const D = {x:d, y:0};
+
+      const th = deg2rad(-thetaDeg);
+      const B = { x: A.x + AB*Math.cos(th), y: A.y + AB*Math.sin(th) };
+
+      // C/Hを「Bが反射角」になる枝で決める
+      const Ccands = circleCircle(B,BC, D,CD);
+      const Hcands = circleCircle(B,BH, D,DH);
+      const chosen = chooseCH(B, D, Ccands, Hcands, prev ? {C:prev.C, H:prev.H} : null);
+      if (!chosen) return { ok:false, reason:"C/Hが解けない（楔の枝が作れない）", A,D,B };
+
+      const C = chosen.C;
+      const H = chosen.H;
+
+      // E：C-D方向にDからDEだけ延長（DはCE上）
+      const u = norm(sub(D,C));
+      const E = add(D, mul(u, DE));
+
+      // G：円(E,EG) と 円(H,GH) の交点
+      const Gcands = circleCircle(E,EG, H,GH);
+      let G = null;
+      if (Gcands.length === 1) G = Gcands[0];
+      else if (Gcands.length === 2) {
+        if (prev?.G) G = (dist(Gcands[0], prev.G) <= dist(Gcands[1], prev.G)) ? Gcands[0] : Gcands[1];
+        else G = (Gcands[0].y < Gcands[1].y) ? Gcands[0] : Gcands[1];
+      }
+      if (!G) return { ok:false, reason:"Gが解けない（EGとGHが交わらない）", A,D,B,C,H,E };
+
+      // F：H→G方向へFHだけ（GはFH上の点）
+      const w = norm(sub(G,H));
+      const F = add(H, mul(w, FH));
+
+      const reflexB = isReflexAtB(B,C,D,H);
+      return { ok:true, A,D,B,C,H,E,G,F, reflexB };
+    }
+
+    // ---------- trajectory ----------
+    let traj = [];
+    let lastGood = null;
+
+    function computeTrajectory() {
+      traj = [];
+      lastGood = null;
+      for (let t=0; t<=360; t++){
+        const fr = solveFrame(t, lastGood);
+        if (fr.ok) lastGood = fr;
+        traj.push({theta:t, ok:fr.ok, frame:fr, F:fr.F, reason:fr.reason});
+      }
+    }
+
+    // ---------- draw (trajectory over mechanism) ----------
+    function drawAll() {
+      const {W, H} = fitCanvas();
+
+      const theta = getInt("theta");
+      const rec = traj.find(r => r.theta===theta && r.ok);
+      const fr = rec ? rec.frame : solveFrame(theta, lastGood);
+
+      // 背景固定グリッド
+      grid(ctx, W, H);
+
+      ctx.save();
+      ctx.font="12px system-ui";
+      ctx.lineWidth=2;
+
+      // バウンディング：軌跡F + 現在フレーム点
+      const pts = traj.filter(r=>r.ok).map(r=>r.F);
+      if (fr.ok){
+        for (const k of ["A","D","B","C","H","E","G","F"]) pts.push(fr[k]);
+      }
+
+      if (pts.length < 2) {
+        ctx.fillStyle="#ffd1d1";
+        ctx.fillText("解けない: " + (fr.reason||"（解がほぼ無い）"), 12, 18);
+        ctx.restore();
+
+        const invalid = traj.filter(r=>!r.ok).length;
+        const firstBad = traj.find(r=>!r.ok);
+        log(
+          "UI同期OK\n" +
+          `解けないθ: ${invalid}/361\n` +
+          `firstBad@θ=${firstBad ? firstBad.theta : "none"} reason=${firstBad ? (firstBad.frame?.reason || firstBad.reason) : "none"}`
+        );
+        return;
+      }
+
+      let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+      for (const p of pts){
+        minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x);
+        minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y);
+      }
+      const pad=10;
+      minX-=pad; maxX+=pad; minY-=pad; maxY+=pad;
+
+      const s = Math.min(W/(maxX-minX), H/(maxY-minY)) * 0.88;
+      const origin = {x: W/2 - ((minX+maxX)/2)*s, y: H/2 + ((minY+maxY)/2)*s};
+
+      // 軸（背景固定でも、軸は機構座標系に合わせて描く）
+      ctx.strokeStyle="#3a4768";
+      seg(ctx,{x:-999,y:0},{x:999,y:0},origin,s);
+      seg(ctx,{x:0,y:-999},{x:0,y:999},origin,s);
+
+      // 軌跡（先に描いて下敷きに）
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.lineWidth = 2;
+      let prev=null;
+      for (const r of traj){
+        if (!r.ok){ prev=null; continue; }
+        if (!prev){ prev=r; continue; }
+        const dx = r.F.x - prev.F.x;
+        ctx.strokeStyle = (dx>=0) ? "#6aa9ff" : "#ff7aa2"; // 往路/復路
+        seg(ctx, prev.F, r.F, origin, s);
+        prev=r;
+      }
+      ctx.restore();
+
+      // 現在フレームのリンク
+      if (!fr.ok){
+        ctx.fillStyle="#ffd1d1";
+        ctx.fillText("解けない: " + (fr.reason||""), 12, 18);
+      } else {
+        const {A,D,B,C,H,E,G,F} = fr;
+
+        // 本体リンク（楔＋ひし形系）
+        ctx.strokeStyle="#d6e3ff";
+        seg(ctx,A,B,origin,s); // AB
+        seg(ctx,B,C,origin,s); // BC
+        seg(ctx,C,D,origin,s); // CD
+        seg(ctx,B,H,origin,s); // BH
+        seg(ctx,H,D,origin,s); // DH
+        seg(ctx,C,E,origin,s); // CE（ライン）
+
+        seg(ctx,D,E,origin,s);
+        seg(ctx,E,G,origin,s);
+        seg(ctx,G,H,origin,s);
+        seg(ctx,H,D,origin,s);
+
+        // FH
+        ctx.strokeStyle="#b6ffd6";
+        seg(ctx,H,F,origin,s);
+
+        // 点ラベル
+        ctx.fillStyle="#fff";
+        pt(ctx,A,origin,s,"A"); pt(ctx,D,origin,s,"D"); pt(ctx,B,origin,s,"B");
+        pt(ctx,C,origin,s,"C"); pt(ctx,H,origin,s,"H"); pt(ctx,E,origin,s,"E"); pt(ctx,G,origin,s,"G");
+        ctx.fillStyle="#b6ffd6"; pt(ctx,F,origin,s,"F",5);
+
+        // いまのF位置マーカー（軌跡の上に見えるように）
+        const q = w2s(F, origin, s);
+        ctx.fillStyle="#ffffff";
+        ctx.beginPath(); ctx.arc(q.x,q.y,6,0,TAU); ctx.fill();
+
+        // 表示情報
+        ctx.fillStyle = fr.reflexB ? "#b6ffd6" : "#ffd1d1";
+        ctx.fillText(`θ=${theta}°  B反射角=${fr.reflexB ? "YES" : "NO(フォールバック)"}`, 12, 18);
+        ctx.fillStyle="#aab6c5";
+        ctx.fillText("青=往路 / 桃=復路（F軌跡）", 12, 34);
+      }
+
+      ctx.restore();
+
+      // log
+      const invalid = traj.filter(r=>!r.ok).length;
+      const firstBad = traj.find(r=>!r.ok);
+      log(
+        "UI同期OK\n" +
+        `解けないθ: ${invalid}/361\n` +
+        `firstBad@θ=${firstBad ? firstBad.theta : "none"} reason=${firstBad ? (firstBad.frame?.reason || firstBad.reason) : "none"}\n` +
+        `DE=CE-CD=${getInt("CE")-getInt("CD")}, FH-GH=${getInt("FH")-getInt("GH")}`
+      );
+    }
+
+    // ---------- buttons / animation ----------
+    document.getElementById("btn_recalc").addEventListener("click", () => {
+      computeTrajectory();
+      drawAll();
+    });
+
+    document.getElementById("btn_preset").addEventListener("click", () => {
+      applyDefaultPreset();
+      computeTrajectory();
+      drawAll();
+    });
+
+    let playing = false;
+    let rafId = null;
+    const btnPlay = document.getElementById("btn_play");
+    const btnReset = document.getElementById("btn_reset");
+
+    function tick(){
+      if (!playing) return;
+      const th = (getInt("theta") + 1) % 361;
+      setTheta(th);
+      drawAll();
+      rafId = requestAnimationFrame(tick);
+    }
+
+    btnPlay.addEventListener("click", () => {
+      playing = !playing;
+      btnPlay.textContent = playing ? "⏸ 停止" : "▶ 再生";
+      if (playing) tick();
+      else if (rafId) cancelAnimationFrame(rafId);
+    });
+
+    btnReset.addEventListener("click", () => {
+      playing = false;
+      btnPlay.textContent = "▶ 再生";
+      if (rafId) cancelAnimationFrame(rafId);
+
+      setTheta(0);
+      computeTrajectory();
+      drawAll();
+    });
+
+    // init
+    applyDefaultPreset();
+    computeTrajectory();
+    drawAll();
+    window.addEventListener("resize", () => drawAll());
+
+  } catch (e) {
+    log("JavaScriptエラー:\n" + (e && e.stack ? e.stack : String(e)));
+  }
+});
+</script>
+</body>
+</html>
