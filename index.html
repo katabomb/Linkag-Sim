@@ -284,18 +284,6 @@ window.addEventListener("DOMContentLoaded", () => {
       return {W:rect.width, H:rect.height};
     }
 
-    // 背景固定グリッド（origin無視）
-    function grid(ctx,W,H){
-      ctx.clearRect(0,0,W,H);
-      ctx.save();
-      ctx.lineWidth=1;
-      ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
-      const step=20;
-      for (let x=0; x<=W; x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-      for (let y=0; y<=H; y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-      ctx.restore();
-    }
-
     function w2s(p, origin, s){return {x: origin.x + (-p.x)*s, y: origin.y - p.y*s};}
     function seg(ctx, p,q, origin, s){
       const a = w2s(p,origin,s), b = w2s(q,origin,s);
@@ -375,9 +363,6 @@ window.addEventListener("DOMContentLoaded", () => {
       const theta = getInt("theta");
       const rec = traj.find(r => r.theta===theta && r.ok);
       const fr = rec ? rec.frame : solveFrame(theta, lastGood);
-
-      // 背景固定グリッド
-      grid(ctx, W, H);
 
       ctx.save();
       ctx.font="12px system-ui";
@@ -545,5 +530,6 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
