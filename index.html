@@ -474,7 +474,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
         // 表示情報
         ctx.fillStyle = "#000";
-        ctx.fillText(`θ=${theta}°);
+        ctx.fillText(`θ=${theta}°  B反射角=${fr.reflexB ? "YES" : "NO(フォールバック)"}`, 12, 18);
+        ctx.fillStyle="#333";
+        ctx.fillText("青=往路 / 桃=復路（F軌跡）", 12, 34);
       }
 
       ctx.restore();
@@ -545,12 +547,3 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
