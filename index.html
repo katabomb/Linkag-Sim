@@ -413,7 +413,7 @@ window.addEventListener("DOMContentLoaded", () => {
       minX-=pad; maxX+=pad; minY-=pad; maxY+=pad;
 
       const s = Math.min(W/(maxX-minX), H/(maxY-minY)) * 0.88;
-      const origin = {x: W/2 - ((minX+maxX)/2)*s, y: H/2 + ((minY+maxY)/2)*s};
+      const origin = {x: W/2 - ((minX+maxX)/2)*s + 60, y: H/2 + ((minY+maxY)/2)*s};
 
       // 軸（背景固定でも、軸は機構座標系に合わせて描く）
       ctx.strokeStyle="#3a4768";
@@ -546,3 +546,4 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
