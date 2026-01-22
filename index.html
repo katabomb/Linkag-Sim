@@ -283,7 +283,51 @@ window.addEventListener("DOMContentLoaded", () => {
       ctx.setTransform(dpr,0,0,dpr,0,0);
       return {W:rect.width, H:rect.height};
     }
+    
+    // ワールド座標に揃うグリッド（拡大縮小・originに追従）
+    function grid(ctx, W, H, origin, s){
+      ctx.clearRect(0,0,W,H);
+      ctx.save();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
 
+      // 画面上のグリッド間隔をだいたい 25px 以上に保つ（拡大すると細かすぎるのを防ぐ）
+      // baseStepWorld は「ワールドでの基本目盛り」
+      const baseStepWorld = 10;
+      let stepWorld = baseStepWorld;
+
+      // stepWorld*s が 25px 未満なら粗くする（10,20,50,100,...）
+      while (stepWorld * s < 25) stepWorld *= 2;
+
+      // 画面に見えるワールド範囲（x,y）
+      const xMin = (0 - origin.x) / s;
+      const xMax = (W - origin.x) / s;
+      const yMin = (origin.y - H) / s;
+      const yMax = (origin.y - 0) / s;
+
+      // x=... の縦線（ワールドの整数目盛りに揃える）
+      const startX = Math.floor(xMin / stepWorld) * stepWorld;
+      for (let x = startX; x <= xMax; x += stepWorld){
+        const sx = origin.x + x * s;
+        ctx.beginPath();
+        ctx.moveTo(sx, 0);
+        ctx.lineTo(sx, H);
+        ctx.stroke();
+      }
+
+      // y=... の横線
+      const startY = Math.floor(yMin / stepWorld) * stepWorld;
+      for (let y = startY; y <= yMax; y += stepWorld){
+        const sy = origin.y - y * s;
+        ctx.beginPath();
+        ctx.moveTo(0, sy);
+        ctx.lineTo(W, sy);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+    
     function w2s(p, origin, s){return {x: origin.x + (-p.x)*s, y: origin.y - p.y*s};}
     function seg(ctx, p,q, origin, s){
       const a = w2s(p,origin,s), b = w2s(q,origin,s);
@@ -401,7 +445,10 @@ window.addEventListener("DOMContentLoaded", () => {
       const VIEW_OFFSET_X = 240;
       const origin = {x: W/2 - ((minX+maxX)/2)*s + VIEW_OFFSET_X, y: H/2 + ((minY+maxY)/2)*s};
 
-      // 軸（背景固定でも、軸は機構座標系に合わせて描く）
+      // グリッド（拡大縮小・originに追従）
+      grid(ctx, W, H, origin, s);
+      
+      // 軸（拡大縮小・originに追従）
       ctx.strokeStyle="#999";
       seg(ctx,{x:-999,y:0},{x:999,y:0},origin,s);
       seg(ctx,{x:0,y:-999},{x:0,y:999},origin,s);
@@ -530,6 +577,7 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
