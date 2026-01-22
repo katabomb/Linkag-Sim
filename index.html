@@ -417,20 +417,20 @@ window.addEventListener("DOMContentLoaded", () => {
       const origin = {x: W/2 - ((minX+maxX)/2)*s + VIEW_OFFSET_X, y: H/2 + ((minY+maxY)/2)*s};
 
       // 軸（背景固定でも、軸は機構座標系に合わせて描く）
-      ctx.strokeStyle="#3a4768";
+      ctx.strokeStyle="#999";
       seg(ctx,{x:-999,y:0},{x:999,y:0},origin,s);
       seg(ctx,{x:0,y:-999},{x:0,y:999},origin,s);
 
       // 軌跡（先に描いて下敷きに）
       ctx.save();
-      ctx.globalAlpha = 0.55;
+      ctx.globalAlpha = 0.9;
       ctx.lineWidth = 2;
       let prev=null;
       for (const r of traj){
         if (!r.ok){ prev=null; continue; }
         if (!prev){ prev=r; continue; }
         const dx = r.F.x - prev.F.x;
-        ctx.strokeStyle = (dx>=0) ? "#6aa9ff" : "#ff7aa2"; // 往路/復路
+        ctx.strokeStyle = (dx>=0) ? "#000" : "#666"; // 往路/復路
         seg(ctx, prev.F, r.F, origin, s);
         prev=r;
       }
@@ -444,7 +444,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const {A,D,B,C,H,E,G,F} = fr;
 
         // 本体リンク（楔＋ひし形系）
-        ctx.strokeStyle="#d6e3ff";
+        ctx.strokeStyle="#000";
         seg(ctx,A,B,origin,s); // AB
         seg(ctx,B,C,origin,s); // BC
         seg(ctx,C,D,origin,s); // CD
@@ -458,24 +458,24 @@ window.addEventListener("DOMContentLoaded", () => {
         seg(ctx,H,D,origin,s);
 
         // FH
-        ctx.strokeStyle="#b6ffd6";
+        ctx.strokeStyle="#000";
         seg(ctx,H,F,origin,s);
 
         // 点ラベル
-        ctx.fillStyle="#fff";
+        ctx.fillStyle="#000";
         pt(ctx,A,origin,s,"A"); pt(ctx,D,origin,s,"D"); pt(ctx,B,origin,s,"B");
         pt(ctx,C,origin,s,"C"); pt(ctx,H,origin,s,"H"); pt(ctx,E,origin,s,"E"); pt(ctx,G,origin,s,"G");
         ctx.fillStyle="#b6ffd6"; pt(ctx,F,origin,s,"F",5);
 
         // いまのF位置マーカー（軌跡の上に見えるように）
         const q = w2s(F, origin, s);
-        ctx.fillStyle="#ffffff";
+        ctx.fillStyle="#000";
         ctx.beginPath(); ctx.arc(q.x,q.y,6,0,TAU); ctx.fill();
 
         // 表示情報
-        ctx.fillStyle = fr.reflexB ? "#b6ffd6" : "#ffd1d1";
+        ctx.fillStyle = "#000";
         ctx.fillText(`θ=${theta}°  B反射角=${fr.reflexB ? "YES" : "NO(フォールバック)"}`, 12, 18);
-        ctx.fillStyle="#aab6c5";
+        ctx.fillStyle="#333";
         ctx.fillText("青=往路 / 桃=復路（F軌跡）", 12, 34);
       }
 
@@ -547,6 +547,7 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
